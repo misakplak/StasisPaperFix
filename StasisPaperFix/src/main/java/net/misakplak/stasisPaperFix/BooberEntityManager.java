@@ -2,6 +2,7 @@ package net.misakplak.stasisPaperFix;
 
 
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -159,6 +160,24 @@ public class BooberEntityManager {
         return locations.containsKey(player.getUniqueId());
     }
 
+    /**
+     * Checks whether the fishing bobber is sitting on a presure plate.
+     */
+    private boolean isPressurePlate(Location location) {
+
+        Material current = location.getBlock().getType();
+
+        if (current.name().endsWith("_PRESSURE_PLATE")) {
+            return true;
+        }
+
+        Material below = location.getBlock()
+                .getRelative(org.bukkit.block.BlockFace.DOWN)
+                .getType();
+
+        return below.name().endsWith("_PRESSURE_PLATE");
+    }
+
 
     /**
      * Checks fishing hooks every tick.
@@ -200,8 +219,6 @@ public class BooberEntityManager {
              */
             if (hook.getVelocity().lengthSquared() < 0.005) {
 
-                // We already have a saved bobber.
-                // Do not overwrite it with another hook.
                 if (locations.containsKey(playerUUID)) {
                     iterator.remove();
                     continue;
@@ -209,6 +226,10 @@ public class BooberEntityManager {
 
                 Location location =
                         hook.getLocation().clone();
+
+                if (!isPressurePlate(location)){
+                    continue;
+                }
 
                 locations.put(
                         playerUUID,
@@ -248,8 +269,7 @@ public class BooberEntityManager {
 
         if (existing != null &&
                 !existing.isDead() &&
-                !existing.isValid()) {
-
+                existing.isValid()) {
             return;
         }
 
@@ -304,8 +324,6 @@ public class BooberEntityManager {
 
                     stand.setVisible(false);
                     stand.setGravity(false);
-
-                    // Keep the normal hitbox.
                     stand.setMarker(false);
 
                     stand.setPersistent(true);
@@ -581,6 +599,8 @@ public class BooberEntityManager {
 
     /**
      * Restores an active stasis holder after the player rejoins.
+     *
+     *
      *
      * The actual holder is stored in the world, but its chunk may have
      * been unloaded while the player was offline. We therefore load the
