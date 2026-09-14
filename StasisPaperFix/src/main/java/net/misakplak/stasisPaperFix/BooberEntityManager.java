@@ -201,11 +201,6 @@ public class BooberEntityManager {
             }
 
 
-            /*
-             * The original Stasis Fixer uses:
-             *
-             * hook.getVelocity().lengthSquared() < 0.005
-             */
             if (hook.getVelocity().lengthSquared() < 0.005) {
 
                 if (locations.containsKey(playerUUID)) {
@@ -292,7 +287,7 @@ public class BooberEntityManager {
                         + player.getName()
                         + " at "
                         + formatLoc(location)
-        );
+        ); // jst for debugging ye ye
     }
 
     /**
@@ -610,7 +605,7 @@ public class BooberEntityManager {
 
         ArmorStand stand = stands.get(playerUUID);
 
-        // Our in-memory reference is still valid.
+        // if in-memory reference is still valid.
         if (stand != null && !stand.isDead() && stand.isValid()) {
             plugin.getLogger().info(
                     "Restored stasis reference for "

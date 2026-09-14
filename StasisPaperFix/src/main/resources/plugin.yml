@@ -1,5 +1,5 @@
 name: StasisPaperFix
-version: '${version}'
+version: '2.6'
 
 main: net.misakplak.stasisPaperFix.StasisPaperFix
 api-version: '26.2'
