@@ -6,6 +6,7 @@ public final class StasisPaperFix extends JavaPlugin {
 
     private BooberEntityManager manager;
 
+
     @Override
     public void onEnable() {
 

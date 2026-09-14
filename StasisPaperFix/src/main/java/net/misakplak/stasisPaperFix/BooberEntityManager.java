@@ -22,6 +22,10 @@ public class BooberEntityManager {
 
     private final StasisPaperFix plugin;
 
+    public StasisPaperFix getPlugin() {
+        return plugin;
+    }
+
     /*
      * Player UUID -> invisible holder.
      */
@@ -105,18 +109,41 @@ public class BooberEntityManager {
     }
 
     /**
-     * Reels in an active stasis holder.
+     * Releases an active stasis holder.
      */
     public void reelStasis(Player player) {
 
         UUID playerUUID = player.getUniqueId();
 
+        Location location = locations.get(playerUUID);
+
+        if (location == null || location.getWorld() == null) {
+            return;
+        }
+
+        //loads stasis chamber chunk.
+        location.getChunk().load();
+
+        // Remove the stored holder reference.
         ArmorStand stand = stands.remove(playerUUID);
 
         if (stand != null && !stand.isDead()) {
             stand.remove();
         }
 
+        // Also look for the actual entity in the world.
+        ArmorStand actualHolder = findHolder(location);
+
+        if (actualHolder != null && !actualHolder.isDead()) {
+            actualHolder.remove();
+
+            plugin.getLogger().info(
+                    "Removed actual stasis holder for "
+                            + player.getName()
+            );
+        }
+
+        // Clear the stasis state.
         locations.remove(playerUUID);
         hooks.remove(playerUUID);
 
@@ -129,8 +156,9 @@ public class BooberEntityManager {
     }
 
     public boolean hasStasis(Player player) {
-        return stands.containsKey(player.getUniqueId());
+        return locations.containsKey(player.getUniqueId());
     }
+
 
     /**
      * Checks fishing hooks every tick.
@@ -219,7 +247,8 @@ public class BooberEntityManager {
                 stands.get(playerUUID);
 
         if (existing != null &&
-                !existing.isDead()) {
+                !existing.isDead() &&
+                !existing.isValid()) {
 
             return;
         }
@@ -506,18 +535,120 @@ public class BooberEntityManager {
 
             location.getWorld().getChunkAt(location).load();
 
-            Entity entity =
-                    location.getWorld()
-                            .getEntity(standUUID);
+            ArmorStand stand = findHolder(location);
 
-            if (entity instanceof ArmorStand stand) {
+            if (stand != null) {
+                stands.put(playerUUID, stand);
+            } else {
+                ArmorStand newStand = spawnHolder(location);
 
-                stands.put(
-                        playerUUID,
-                        stand
-                );
+                if (newStand != null) {
+                    stands.put(playerUUID, newStand);
+                }
             }
         }
+    }
+
+    /**
+     * Finds one of our invisible holders near the saved bobber location.
+     */
+    private ArmorStand findHolder(Location location) {
+
+        World world = location.getWorld();
+
+        if (world == null) {
+            return null;
+        }
+
+        for (Entity entity : world.getNearbyEntities(
+                location,
+                1.5,
+                1.5,
+                1.5
+        )) {
+
+            if (!(entity instanceof ArmorStand stand)) {
+                continue;
+            }
+
+            if (stand.getScoreboardTags().contains("stasis_holder")) {
+                return stand;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Restores an active stasis holder after the player rejoins.
+     *
+     * The actual holder is stored in the world, but its chunk may have
+     * been unloaded while the player was offline. We therefore load the
+     * original bobber chunk and look for our holder again.
+     */
+    public void restoreStasis(Player player) {
+
+        UUID playerUUID = player.getUniqueId();
+
+        Location location = locations.get(playerUUID);
+
+        if (location == null || location.getWorld() == null) {
+            return;
+        }
+
+        // Make sure the stasis chamber's chunk is loaded.
+        location.getChunk().load();
+
+        ArmorStand stand = stands.get(playerUUID);
+
+        // Our in-memory reference is still valid.
+        if (stand != null && !stand.isDead() && stand.isValid()) {
+            plugin.getLogger().info(
+                    "Restored stasis reference for "
+                            + player.getName()
+            );
+            return;
+        }
+
+        // The old entity reference is no longer usable.
+        stands.remove(playerUUID);
+
+        // Look for the holder that Minecraft loaded from disk.
+        ArmorStand existing = findHolder(location);
+
+        if (existing != null) {
+
+            stands.put(playerUUID, existing);
+            saveData();
+
+            plugin.getLogger().info(
+                    "Found existing stasis holder for "
+                            + player.getName()
+                            + " after rejoin."
+            );
+
+            return;
+        }
+
+        // The old ArmorStand wasn't loaded/saved, so create a new one.
+        ArmorStand newStand = spawnHolder(location);
+
+        if (newStand == null) {
+            plugin.getLogger().warning(
+                    "Could not restore stasis holder for "
+                            + player.getName()
+            );
+            return;
+        }
+
+        stands.put(playerUUID, newStand);
+        saveData();
+
+        plugin.getLogger().info(
+                "Created new stasis holder for "
+                        + player.getName()
+                        + " after rejoin."
+        );
     }
 
     /**

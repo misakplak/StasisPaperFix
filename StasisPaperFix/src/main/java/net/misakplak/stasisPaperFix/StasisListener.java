@@ -1,5 +1,6 @@
 package net.misakplak.stasisPaperFix;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -9,6 +10,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerFishEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 
 public class StasisListener implements Listener {
@@ -86,6 +88,18 @@ public class StasisListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onWorldChange(PlayerChangedWorldEvent event) {
         manager.activateStasis(event.getPlayer());
+    }
+
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+
+        Player player = event.getPlayer();
+
+        // Wait one tick so the player's world/chunks are fully ready.
+        Bukkit.getScheduler().runTask(
+                manager.getPlugin(),
+                () -> manager.restoreStasis(player)
+        );
     }
 
     /*
