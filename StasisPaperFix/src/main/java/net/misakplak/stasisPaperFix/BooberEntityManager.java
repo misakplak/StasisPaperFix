@@ -27,21 +27,12 @@ public class BooberEntityManager {
         return plugin;
     }
 
-    /*
-     * Player UUID -> invisible holder.
-     */
     private final Map<UUID, ArmorStand> stands = new HashMap<>();
 
-    /*
-     * Player UUID -> fishing hook UUID .
-     */
+
     private final Map<UUID, UUID> hooks = new HashMap<>();
 
-    /*
-     * Player UUID -> saved bobber location.
-     *
-     * This is kept even after the real FishHook disappears.
-     */
+
     private final Map<UUID, Location> locations = new HashMap<>();
 
     public BooberEntityManager(StasisPaperFix plugin) {
@@ -59,17 +50,15 @@ public class BooberEntityManager {
 
         UUID playerUUID = player.getUniqueId();
 
-        /*
-         * Remove an old holder.
-         */
+
         ArmorStand oldStand = stands.remove(playerUUID);
 
         if (oldStand != null && !oldStand.isDead()) {
-            oldStand.remove();
+            oldStand.remove(); //ofc
         }
 
         /*
-         * Remove old saved location.
+         * Remove old saved location duh.
          *
          */
 
@@ -77,7 +66,7 @@ public class BooberEntityManager {
         locations.remove(playerUUID);
 
         /*
-         * Track the new fishing hook.
+         * Track the new fishing hook ay.
          */
 
         hooks.put(
@@ -102,7 +91,7 @@ public class BooberEntityManager {
 
         ArmorStand stand = stands.remove(playerUUID);
 
-        if (stand != null && !stand.isDead()) {
+        if (stand != null && !stand.isDead()) { //check if stand is standing xd
             stand.remove();
         }
 
