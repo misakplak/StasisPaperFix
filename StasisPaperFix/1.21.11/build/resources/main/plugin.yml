@@ -1,0 +1,6 @@
+name: StasisPaperFix
+version: '2.8'
+
+main: net.misakplak.stasisPaperFix.StasisPaperFix
+api-version: '1.21.11'
+load: POSTWORLD
